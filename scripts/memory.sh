@@ -10,7 +10,8 @@ if [[ "$(uname)" == "Darwin" ]]; then
     vm=$(vm_stat)
     free_pages=$(echo "$vm" | awk '/Pages free/ {gsub(/\./,""); print $3}')
     spec_pages=$(echo "$vm" | awk '/Pages speculative/ {gsub(/\./,""); print $3}')
-    free_gb=$(echo "scale=1; ($free_pages + $spec_pages) * $page_size / 1073741824" | bc)
+    inac_pages=$(echo "$vm" | awk '/Pages inactive/ {gsub(/\./,""); print $3}')
+    free_gb=$(echo "scale=1; ($free_pages + $spec_pages + $inac_pages) * $page_size / 1073741824" | bc)
     used_gb=$(echo "scale=1; $total_gb - $free_gb" | bc)
     pct=$(echo "scale=0; ($used_gb * 100) / $total_gb" | bc)
 else
@@ -25,4 +26,4 @@ elif (( pct >= 60 )); then color="#[fg=colour214]"
 else                       color="#[fg=colour82]"
 fi
 
-printf "${color}MEM %.1fG#[default]" "$used_gb"
+printf "${color}MEM %.1fG %d%%#[default]" "$used_gb" "$pct"
