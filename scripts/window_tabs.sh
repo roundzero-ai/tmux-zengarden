@@ -6,7 +6,7 @@
 # Each window index cycles through a distinct color palette
 
 # 8-color palette — sky, purple, green, amber, coral, cyan, gold, pink
-COLORS=(colour75 colour141 colour82 colour214 colour203 colour51 colour220 colour177)
+COLORS=(colour75 colour141 colour82 colour214 colour203 colour51 colour220 colour177 colour208)
 NUM_COLORS=${#COLORS[@]}
 
 # Nerd Font soft rounded powerline caps (U+E0B6, U+E0B4)
