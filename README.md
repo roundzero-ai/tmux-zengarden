@@ -29,7 +29,7 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 | Action | Key |
 |---|---|
-| Prefix | `Ctrl-s` |
+| Prefix | `Ctrl-Space` |
 | Navigate panes | `Alt+h/j/k/l` or `prefix + h/j/k/l` |
 | Resize pane (coarse) | `prefix + H/J/K/L` |
 | Resize pane (fine) | `prefix + Alt+H/J/K/L` |
@@ -64,7 +64,7 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 ## Nested tmux (SSH into a remote machine running tmux)
 
-Press `F12` to suspend local key interception — all keypresses (including `Ctrl-s`) pass through to the inner session. The brand pill swaps from blue `≋ ZenGarden` to coral `⇥ REMOTE` as a visual indicator. Press `F12` again to resume local control.
+Press `F12` to suspend local key interception — all keypresses (including `Ctrl-Space`) pass through to the inner session. The brand pill swaps from blue `≋ ZenGarden` to coral `⇥ REMOTE` as a visual indicator. Press `F12` again to resume local control.
 
 ## GPU Stats
 
