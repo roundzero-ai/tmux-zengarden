@@ -151,7 +151,28 @@ tmux's `#{?condition,true,false}` parser splits on commas. Commas inside `#[styl
 
 ## Nested tmux (SSH into a remote machine running tmux)
 
-Press `F12` to suspend local key interception — all keypresses (including `Ctrl-Space`) pass through to the inner session. The brand pill swaps from blue `≋ ZenGarden` to coral `⇥ REMOTE`, and all outer window tabs dim to grey. Press `F12` again to resume local control. Clipboard copy works across nesting levels via OSC 52 (`set-clipboard on`).
+Press `F12` to suspend local key interception — all keypresses (including `Ctrl-Space`) pass through to the inner session. The brand pill swaps from blue `≋ ZenGarden` to coral `⇥ REMOTE`, and all outer window tabs dim to grey. Press `F12` again to resume local control.
+
+### Clipboard in nested tmux
+
+Two mechanisms work together to ensure copy works through all nesting layers:
+
+| Setting | Purpose |
+|---|---|
+| `set-clipboard on` | tmux processes raw OSC 52 from apps and forwards to the outer terminal |
+| `allow-passthrough on` | tmux forwards DCS passthrough sequences (active pane only) to the outer terminal |
+
+**Why both are needed:** tmux copy-mode generates raw OSC 52 sequences, which `set-clipboard on` handles directly. But TUI applications like [OpenCode](https://github.com/anomalyco/opencode) detect `$TMUX` and wrap OSC 52 inside a DCS tmux passthrough (`\x1bPtmux;\x1b...\x1b\\`). Without `allow-passthrough on`, the inner tmux blocks this DCS sequence and the copy never reaches the outer terminal.
+
+The copy chain for a TUI app in nested tmux:
+```
+App sends DCS-wrapped OSC 52
+  → inner tmux (allow-passthrough on) strips DCS, forwards raw OSC 52
+    → outer tmux (set-clipboard on) processes OSC 52, forwards to terminal
+      → Ghostty copies to system clipboard
+```
+
+`allow-passthrough on` restricts passthrough to the **active pane only**, which is the safe default — only the pane the user is focused on can send escape sequences to the outer terminal.
 
 ## GPU Stats
 
