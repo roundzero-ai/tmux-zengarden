@@ -134,6 +134,7 @@ All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy
 | `gpu.sh` | `status-format[1]` | GPU utilization (macOS: `ioreg`, Linux: `nvidia-smi`) |
 | `gpu_daemon.sh` | — | Optional background GPU polling daemon |
 | `window_tabs.sh` | — | Legacy shell-based tab renderer (replaced by native `#{W:...}` format) |
+| `pane_header.sh` | `split-window` (prefix+_ / prefix+\\) | Prints `user@host` + git branch/dirty status, then execs shell — helps identify outer vs inner tmux panes |
 
 ## Architecture Decisions
 
