@@ -5,7 +5,7 @@ A clean, modern tmux setup for coding and vibe-coding across Mac Studio, DGX Spa
 ## Features
 
 - **256-color + true color** — optimized for Ghostty terminal
-- **Two-line status bar**: session · host · git branch/status · CPU · RAM · GPU · clock
+- **Two-line status bar**: session · CPU · RAM · GPU · clock
 - **Native window tabs** with per-window color cycling and instant updates on switch
 - **Vim pane navigation**: `Alt+h/j/k/l` (no prefix) or `prefix + h/j/k/l`
 - **Smart pane splits**: bottom-quarter and right-third toggles (create or focus)
@@ -55,13 +55,13 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 ### Line 0 (top): Brand pill + identity + window tabs
 
-- **Left**: brand pill (`≋ ZenGarden` or `⇥ REMOTE`) + `user@host`
+- **Left**: brand pill (`≋ ZenGarden` or `⇥ REMOTE`)
 - **Right**: native window tabs rendered via `#{W:...}` tmux format
 
 ### Line 1 (bottom): Session pill + system stats
 
 - **Left**: session name pill; `≋ PREFIX` pill appears when prefix is active
-- **Right**: git status · CPU · MEM · GPU · clock (via `#()` shell scripts, refreshed every `status-interval` = 5s)
+- **Right**: CPU · MEM · GPU · clock (via `#()` shell scripts, refreshed every `status-interval` = 5s)
 
 ### Window Tab Labels
 
