@@ -4,12 +4,12 @@
 # whether this pane belongs to the outer or inner tmux session.
 
 # ── Colours (256-colour, matching ZenGarden palette) ──────────
-C_SKY='\033[38;5;75m'       # sky   — user@host
-C_GREEN='\033[38;5;82m'     # green — git branch (clean)
-C_AMBER='\033[38;5;214m'    # amber — git dirty indicator
-C_GRAY='\033[38;5;240m'     # gray  — separators
-C_BOLD='\033[1m'
-C_RST='\033[0m'
+C_SKY=$'\033[38;5;75m'       # sky   — user@host
+C_GREEN=$'\033[38;5;82m'    # green — git branch (clean)
+C_AMBER=$'\033[38;5;214m'   # amber — git dirty indicator
+C_GRAY=$'\033[38;5;240m'    # gray  — separators
+C_BOLD=$'\033[1m'
+C_RST=$'\033[0m'
 
 # ── Identity ───────────────────────────────────────────────────
 USER_AT_HOST="${USER}@$(hostname -s)"
