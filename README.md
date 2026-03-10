@@ -41,6 +41,7 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 | Swap pane down/up | `prefix + >` / `prefix + <` |
 | New window | `prefix + c` |
 | Switch window | `Alt+1..9` · `Alt+[` / `Alt+]` |
+| Swap window left/right | `prefix + Shift+←` / `prefix + Shift+→` |
 | Last window | `prefix + Tab` |
 | Reload config | `prefix + r` |
 | Copy mode | `prefix + [` → `v` select → `y` yank |
