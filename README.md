@@ -54,24 +54,47 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 A second way to control an inner (SSH-remote) tmux **without activating F12 REMOTE mode**.
 All outer bindings stay active; the Ctrl-modifier routes the equivalent command to the inner session.
-Requires Ghostty + `extended-keys on` (set automatically).
+Requires `extended-keys on` (set automatically).
+
+**Prefix-free** — handled by tmux, work on any terminal with extended keys:
 
 | Action | Key |
 |---|---|
-| Inner select window 1..9 | `Ctrl+Alt+1..9` (prefix-free) |
-| Inner next window | `Ctrl+Alt+Tab` (prefix-free) |
-| Inner prev window | `Ctrl+Alt+Shift+Tab` (prefix-free) |
-| Inner new window | `prefix + Ctrl+c` |
-| Inner close pane | `prefix + Ctrl+x` |
-| Inner split horizontal | `prefix + Ctrl+\|` |
-| Inner split vertical | `prefix + Ctrl+-` |
-| Inner bottom pane 25% | `prefix + Ctrl+_` |
-| Inner right pane 33% | `prefix + Ctrl+\` |
-| Inner swap window left/right | `prefix + Ctrl+Shift+←` / `prefix + Ctrl+Shift+→` |
-| Inner resize pane (coarse) | `prefix + Ctrl+H/J/K/L` (repeatable) |
-| Inner resize pane (fine) | `prefix + Ctrl+Alt+H/J/K/L` (repeatable) |
+| Inner pane navigation | `Ctrl+Alt+h/j/k/l` |
+| Inner select window 1..9 | `Ctrl+Alt+1..9` |
+| Inner next window | `Ctrl+Alt+Tab` |
+| Inner prev window | `Ctrl+Alt+Shift+Tab` |
 
-> **Optional single-keystroke shortcut**: Ghostty keybindings can send the outer-prefix byte sequence + command key in a single keypress, eliminating the need to manually press the outer prefix. See the Ghostty config section below for details.
+**Prefix-based** — require outer prefix (`Ctrl-Space`) first, then:
+
+| Action | Key (after prefix) |
+|---|---|
+| Inner new window | `Ctrl+c` |
+| Inner close pane | `Ctrl+x` |
+| Inner zoom toggle | `Ctrl+z` |
+| Inner split horizontal | `Ctrl+\|` |
+| Inner split vertical | `Ctrl+-` |
+| Inner bottom pane 25% | `Ctrl+_` |
+| Inner right pane 33% | `Ctrl+\` |
+| Inner swap window left/right | `Ctrl+Shift+←` / `Ctrl+Shift+→` |
+| Inner resize pane (coarse) | `Ctrl+H/J/K/L` (repeatable) |
+| Inner resize pane (fine) | `Ctrl+Alt+H/J/K/L` (repeatable) |
+
+**Ghostty single-keystroke shortcuts** (optional, eliminates the prefix press):
+
+The Ghostty config in [tui-zening](https://github.com/roundzero-ai/tui-zening) adds keybindings that send the outer-prefix CSI u sequence + command CSI u sequence in one keypress. For example, `Ctrl+Alt+c` sends `\x1b[32;5u\x1b[99;5u` (Ctrl-Space + Ctrl-c in kitty encoding), which the outer tmux processes as prefix → `bind C-c` → inner new window.
+
+| Action | Ghostty shortcut | Without Ghostty |
+|---|---|---|
+| Inner new window | `Ctrl+Alt+c` | `prefix + Ctrl+c` |
+| Inner close pane | `Ctrl+Alt+x` | `prefix + Ctrl+x` |
+| Inner zoom toggle | `Ctrl+Alt+z` | `prefix + Ctrl+z` |
+| Inner split horizontal | `Ctrl+Alt+\|` | `prefix + Ctrl+\|` |
+| Inner split vertical | `Ctrl+Alt+-` | `prefix + Ctrl+-` |
+| Inner bottom pane 25% | `Ctrl+Alt+_` | `prefix + Ctrl+_` |
+| Inner right pane 33% | `Ctrl+Alt+\` | `prefix + Ctrl+\` |
+| Inner swap window L/R | `Ctrl+Alt+Shift+←/→` | `prefix + Ctrl+Shift+←/→` |
+| Inner resize coarse | `Ctrl+Alt+Shift+H/J/K/L` | `prefix + Ctrl+H/J/K/L` |
 
 ## Status Bar
 
