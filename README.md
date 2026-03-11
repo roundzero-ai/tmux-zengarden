@@ -27,10 +27,12 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 ## Key Bindings
 
+### Outer tmux
+
 | Action | Key |
 |---|---|
 | Prefix | `Ctrl-Space` |
-| Navigate panes | `Alt+h/j/k/l` or `prefix + h/j/k/l` |
+| Navigate panes | `Alt+h/j/k/l` (no prefix) or `prefix + h/j/k/l` |
 | Resize pane (coarse) | `prefix + H/J/K/L` |
 | Resize pane (fine) | `prefix + Alt+H/J/K/L` |
 | Split horizontal | `prefix + \|` |
@@ -41,11 +43,35 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 | Swap pane down/up | `prefix + >` / `prefix + <` |
 | New window | `prefix + c` |
 | Switch window | `Alt+1..9` · `Alt+[` / `Alt+]` |
+| Cycle window | `Alt+Tab` / `Alt+Shift+Tab` |
 | Swap window left/right | `prefix + Shift+←` / `prefix + Shift+→` |
 | Last window | `prefix + Tab` |
 | Reload config | `prefix + r` |
 | Copy mode | `prefix + [` → `v` select → `y` yank |
-| Nested tmux toggle | `F12` — suspend/resume local key interception |
+| Nested tmux toggle (REMOTE mode) | `F12` — suspend/resume local key interception |
+
+### Inner tmux — Ctrl-key layer (Ghostty + MacBook)
+
+A second way to control an inner (SSH-remote) tmux **without activating F12 REMOTE mode**.
+All outer bindings stay active; the Ctrl-modifier routes the equivalent command to the inner session.
+Requires Ghostty + `extended-keys on` (set automatically).
+
+| Action | Key |
+|---|---|
+| Inner select window 1..9 | `Ctrl+Alt+1..9` (prefix-free) |
+| Inner next window | `Ctrl+Alt+Tab` (prefix-free) |
+| Inner prev window | `Ctrl+Alt+Shift+Tab` (prefix-free) |
+| Inner new window | `prefix + Ctrl+c` |
+| Inner close pane | `prefix + Ctrl+x` |
+| Inner split horizontal | `prefix + Ctrl+\|` |
+| Inner split vertical | `prefix + Ctrl+-` |
+| Inner bottom pane 25% | `prefix + Ctrl+_` |
+| Inner right pane 33% | `prefix + Ctrl+\` |
+| Inner swap window left/right | `prefix + Ctrl+Shift+←` / `prefix + Ctrl+Shift+→` |
+| Inner resize pane (coarse) | `prefix + Ctrl+H/J/K/L` (repeatable) |
+| Inner resize pane (fine) | `prefix + Ctrl+Alt+H/J/K/L` (repeatable) |
+
+> **Optional single-keystroke shortcut**: Ghostty keybindings can send the outer-prefix byte sequence + command key in a single keypress, eliminating the need to manually press the outer prefix. See the Ghostty config section below for details.
 
 ## Status Bar
 
@@ -154,7 +180,24 @@ tmux's `#{?condition,true,false}` parser splits on commas. Commas inside `#[styl
 
 ## Nested tmux (SSH into a remote machine running tmux)
 
+Two modes for controlling inner tmux, both active simultaneously:
+
+### F12 — REMOTE mode (full passthrough)
+
 Press `F12` to suspend local key interception — all keypresses (including `Ctrl-Space`) pass through to the inner session. The brand pill swaps from blue `≋ ZenGarden` to coral `⇥ REMOTE`, and all outer window tabs dim to grey. Press `F12` again to resume local control.
+
+### Ctrl-key layer (no mode toggle needed)
+
+Without toggling REMOTE mode, the **Ctrl-key layer** lets you send common commands to the inner tmux while keeping full control of the outer. The outer session stays fully functional for outer-window management.
+
+Pattern: outer binding uses an extra **Ctrl** (or **Ctrl+Alt**) modifier; each binding executes `send-keys` with the equivalent key to the inner pane.
+
+- **Prefix-free** (`Ctrl+Alt+…`): window select 1–9, window cycle (Tab/Shift+Tab)
+- **With outer prefix** (`prefix + Ctrl+…`): splits, new window, close pane, swap window, resize
+
+Requires `set -g extended-keys on` (auto-set) and Ghostty with kitty keyboard protocol so the terminal can distinguish `Ctrl+|` from `Ctrl+\`, `Ctrl+Tab` from `Tab`, etc.
+
+**Optional Ghostty single-keystroke layer**: add Ghostty keybindings to send the outer-prefix byte sequence + command byte in one keypress. For example, bind `Ctrl+Alt+n` in Ghostty to `text:\u001b[32;5u\u001b[99;5u` (outer Ctrl-Space + Ctrl-c in kitty encoding) so the outer tmux executes its `prefix + Ctrl+c` → inner new window, without the user pressing the prefix separately.
 
 ### Clipboard in nested tmux
 
