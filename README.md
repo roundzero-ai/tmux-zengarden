@@ -28,71 +28,105 @@ bash ~/Projects/tmux_zengarden/deploy.sh --posh
 
 ## Key Bindings
 
+This setup has three layers:
+
+- `outer tmux`: your local tmux session in the current terminal
+- `inner tmux`: a nested tmux session, usually over SSH, while outer tmux stays active
+- `Ghostty shortcut layer`: optional terminal shortcuts that skip the outer prefix for a small set of bindings
+
 ### Outer tmux
+
+Core controls:
 
 | Action | Key |
 |---|---|
-| Prefix | `Ctrl-Space` |
-| Navigate panes | `Alt+h/j/k/l` (no prefix) or `prefix + h/j/k/l` |
-| Resize pane (coarse, 3 cells) | `prefix + ←/↓/↑/→` (repeatable) |
-| Resize pane (fine, 1 cell) | `prefix + Alt+←/↓/↑/→` (repeatable) |
+| Prefix | `Ctrl+Space` |
+| Toggle nested passthrough | `F12` |
+| Reload config | `prefix + r` |
+| Copy mode | `prefix + [` -> `v` select -> `y` yank |
+
+Panes:
+
+| Action | Key |
+|---|---|
+| Move focus | `Alt+h/j/k/l` or `prefix + h/j/k/l` |
+| Resize coarse (3 cells) | `prefix + ←/↓/↑/→` |
+| Resize fine (1 cell) | `prefix + Alt+←/↓/↑/→` |
 | Split horizontal | `prefix + \` |
 | Split vertical | `prefix + -` |
-| Bottom pane 25% | `prefix + =` — creates if none, focuses if exists |
-| Right pane 33% | `prefix + /` — creates if none, focuses if exists |
-| Zoom pane | `prefix + z` |
-| New window | `prefix + c` |
-| Close pane (confirm) | `prefix + x` |
-| Switch window | `Alt+1..9` |
-| Cycle window | `Alt+Tab` |
+| Bottom pane 25% | `prefix + =` |
+| Right pane 33% | `prefix + /` |
 | Swap pane down / up | `prefix + .` / `prefix + ,` |
-| Swap window left / right | `prefix + p` / `prefix + n` (repeatable) |
-| Reload config | `prefix + r` |
-| Copy mode | `prefix + [` → `v` select → `y` yank |
-| Nested tmux toggle (REMOTE mode) | `F12` — suspend/resume local key interception |
+| Zoom pane | `prefix + z` |
+| Close pane | `prefix + x` |
+
+Windows:
+
+| Action | Key |
+|---|---|
+| New window | `prefix + c` |
+| Select window 1..9 | `Alt+1..9` |
+| Next window | `Alt+Tab` |
+| Swap window left / right | `prefix + p` / `prefix + n` |
 
 ### Inner tmux — Ctrl-key layer
 
-Control an inner (SSH-remote) tmux **without activating F12 REMOTE mode**. Pattern: add **Ctrl** to the outer binding. Requires `extended-keys on` (set automatically) and a terminal that supports CSI u / kitty keyboard protocol (e.g. Ghostty).
+Use this when you want to control an inner tmux session **without** turning on `F12` REMOTE mode.
 
-**Prefix-free** — handled by tmux root-table bindings:
+Rule of thumb:
+
+- prefix-free inner actions use `Ctrl+Alt+...`
+- prefix-based inner actions use `outer prefix`, then the matching `Ctrl+...` key
+- plain keys after prefix still target the outer tmux
+
+Prefix-free inner actions:
 
 | Action | Key |
 |---|---|
-| Inner pane navigation | `Ctrl+Alt+h/j/k/l` |
-| Inner select window 1..9 | `Ctrl+Alt+1..9` |
-| Inner next window | `Ctrl+Alt+Tab` |
+| Move inner pane focus | `Ctrl+Alt+h/j/k/l` |
+| Select inner window 1..9 | `Ctrl+Alt+1..9` |
+| Next inner window | `Ctrl+Alt+Tab` |
 
-**Prefix-based** — require outer prefix (`Ctrl-Space`) first:
+Prefix-based inner actions after outer `Ctrl+Space`:
 
-| Action | Key (after prefix) |
+| Action | Key after prefix |
 |---|---|
-| Inner new window | `Ctrl+c` |
-| Inner close pane | `Ctrl+x` |
-| Inner zoom toggle | `Ctrl+z` |
-| Inner reload config | `Ctrl+r` |
+| New inner window | `Ctrl+c` |
+| Close inner pane | `Ctrl+x` |
+| Toggle inner zoom | `Ctrl+z` |
+| Reload inner config | `Ctrl+r` |
 | Inner split horizontal | `Ctrl+\` |
 | Inner split vertical | `Ctrl+-` |
 | Inner bottom pane 25% | `Ctrl+=` |
 | Inner right pane 33% | `Ctrl+/` |
-| Inner swap pane down / up | `Ctrl+.` / `Ctrl+,` |
-| Inner copy mode | `Ctrl+[` (CSI u only) |
-| Inner swap window left / right | `Ctrl+p` / `Ctrl+n` |
-| Inner resize coarse | `Ctrl+←/↓/↑/→` (repeatable) |
-| Inner resize fine | `Ctrl+Alt+←/↓/↑/→` (repeatable) |
+| Swap inner pane down / up | `Ctrl+.` / `Ctrl+,` |
+| Swap inner window left / right | `Ctrl+p` / `Ctrl+n` |
+| Resize inner pane coarse | `Ctrl+←/↓/↑/→` |
+| Resize inner pane fine | `Ctrl+Alt+←/↓/↑/→` |
+| Inner copy mode | `Ctrl+[` |
+
+How it works:
+
+- `prefix + c` means "act on outer tmux"
+- `prefix + Ctrl+c` means "forward outer prefix + c to inner tmux"
+- this keeps outer and inner controls available at the same time, without mode switching
 
 ### Ghostty single-keystroke shortcuts (optional)
 
-The Ghostty config in [tui-zening](https://github.com/roundzero-ai/tui-zening) adds two helper layers: `Alt+...` skips the prefix for the updated outer tmux bindings, and `Ctrl+Alt+...` skips the prefix for inner tmux. It also sends proper CSI u for prefix-free combos that macOS can't produce natively (digits, `Tab`).
+Ghostty adds a helper layer on top of tmux:
 
-| Action | Ghostty shortcut | Without Ghostty |
+- `Alt+...` skips the prefix for selected **outer** bindings
+- `Ctrl+Alt+...` skips the prefix for selected **inner** bindings
+- prefix-free inner bindings like `Ctrl+Alt+h/j/k/l` still work natively in tmux and do not need a Ghostty entry
+
+| Action | Ghostty shortcut | Equivalent tmux input |
 |---|---|---|
 | Outer split horizontal | `Alt+\` | `prefix + \` |
 | Outer bottom pane 25% | `Alt+=` | `prefix + =` |
 | Outer swap pane down / up | `Alt+.` / `Alt+;` | `prefix + .` / `prefix + ,` |
 | Outer swap window left / right | `Alt+p` / `Alt+n` | `prefix + p` / `prefix + n` |
 | Outer resize coarse | `Alt+←/↓/↑/→` | `prefix + ←/↓/↑/→` |
-| Inner window select 1..9 | `Ctrl+Alt+1..9` | `Ctrl+Alt+1..9` (needs CSI u fix) |
+| Inner select window 1..9 | `Ctrl+Alt+1..9` | `Ctrl+Alt+1..9` |
 | Inner next window | `Ctrl+Alt+Tab` | `Ctrl+Alt+Tab` |
 | Inner new window | `Ctrl+Alt+c` | `prefix + Ctrl+c` |
 | Inner close pane | `Ctrl+Alt+x` | `prefix + Ctrl+x` |
@@ -104,10 +138,17 @@ The Ghostty config in [tui-zening](https://github.com/roundzero-ai/tui-zening) a
 | Inner right pane 33% | `Ctrl+Alt+/` | `prefix + Ctrl+/` |
 | Inner swap pane down / up | `Ctrl+Alt+.` / `Ctrl+Alt+;` | `prefix + Ctrl+.` / `prefix + Ctrl+,` |
 | Inner copy mode | `Ctrl+Alt+[` | `prefix + Ctrl+[` |
-| Inner swap window L/R | `Ctrl+Alt+p` / `Ctrl+Alt+n` | `prefix + Ctrl+p` / `prefix + Ctrl+n` |
+| Inner swap window left / right | `Ctrl+Alt+p` / `Ctrl+Alt+n` | `prefix + Ctrl+p` / `prefix + Ctrl+n` |
 | Inner resize coarse | `Ctrl+Alt+←/↓/↑/→` | `prefix + Ctrl+←/↓/↑/→` |
 
-> **Note:** Inner pane navigation (`Ctrl+Alt+h/j/k/l`) needs no Ghostty keybind - it works natively via tmux extended-keys. Inner fine resize (`prefix + Ctrl+Alt+←/↓/↑/→`) still uses the manual tmux binding.
+Maintenance rules for future updates:
+
+- Avoid adding bindings that require `Shift` for normal use; prefer letters, arrows, or unshifted punctuation.
+- Keep the mapping pattern aligned across layers: outer tmux, inner tmux, then Ghostty shortcut if one exists.
+- If an outer binding changes and it has an inner equivalent, update the inner `Ctrl+...` form to match the same semantic action.
+- If an inner action has a Ghostty shortcut, update the matching line in `tui-zening/config/ghostty` at the same time.
+- Prefix-free inner bindings belong to tmux root-table bindings; prefix-based inner bindings belong to the `prefix + Ctrl+...` family.
+- Document the tmux binding first, then the Ghostty shortcut as a convenience alias.
 
 ## Status Bar
 
