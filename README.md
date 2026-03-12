@@ -227,7 +227,7 @@ All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy
 | `cpu.sh` | `status-format[1]` | CPU usage percentage (macOS: `top`, Linux: `top -bn1`) |
 | `memory.sh` | `status-format[1]` | Memory usage (macOS: `vm_stat`, Linux: `free`) |
 | `gpu.sh` | `status-format[1]` | GPU utilization (macOS: `ioreg`, Linux: `nvidia-smi`) |
-| `pane_git.sh` | `pane-border-format` | Compact `git: branch` or `git: branch*` for pane header |
+| `pane_git.sh` | `pane-border-format` | Pane context: `dir`, active Python env (`venv`/Conda), and `git: branch` |
 
 ## GPU Stats
 
