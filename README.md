@@ -115,17 +115,24 @@ How it works:
 
 Ghostty adds a helper layer on top of tmux:
 
-- `Alt+...` skips the prefix for selected **outer** bindings
+- `Alt+...` skips the prefix for the full **outer** prefix-based binding set
 - `Ctrl+Alt+...` skips the prefix for selected **inner** bindings
 - prefix-free inner bindings like `Ctrl+Alt+h/j/k/l` still work natively in tmux and do not need a Ghostty entry
 
 | Action | Ghostty shortcut | Equivalent tmux input |
 |---|---|---|
+| Outer resize fine | `Ctrl+Alt+←/↓/↑/→` | `prefix + Alt+←/↓/↑/→` |
 | Outer split horizontal | `Alt+\` | `prefix + \` |
+| Outer split vertical | `Alt+-` | `prefix + -` |
 | Outer bottom pane 25% | `Alt+=` | `prefix + =` |
+| Outer zoom pane | `Alt+z` | `prefix + z` |
+| Outer new window | `Alt+c` | `prefix + c` |
+| Outer close pane | `Alt+x` | `prefix + x` |
 | Outer swap pane down / up | `Alt+.` / `Alt+;` | `prefix + .` / `prefix + ,` |
 | Outer swap window left / right | `Alt+p` / `Alt+n` | `prefix + p` / `prefix + n` |
 | Outer resize coarse | `Alt+←/↓/↑/→` | `prefix + ←/↓/↑/→` |
+| Outer reload config | `Alt+r` | `prefix + r` |
+| Outer copy mode | `Alt+[` | `prefix + [` |
 | Inner select window 1..9 | `Ctrl+Alt+1..9` | `Ctrl+Alt+1..9` |
 | Inner next window | `Ctrl+Alt+Tab` | `Ctrl+Alt+Tab` |
 | Inner new window | `Ctrl+Alt+c` | `prefix + Ctrl+c` |
@@ -146,6 +153,7 @@ Maintenance rules for future updates:
 - Avoid adding bindings that require `Shift` for normal use; prefer letters, arrows, or unshifted punctuation.
 - Keep the mapping pattern aligned across layers: outer tmux, inner tmux, then Ghostty shortcut if one exists.
 - If an outer binding changes and it has an inner equivalent, update the inner `Ctrl+...` form to match the same semantic action.
+- Keep the full outer Ghostty alias set aligned with prefix-based outer actions: resize, split, toggle pane layouts, zoom, new/close, swaps, reload, and copy mode.
 - If an inner action has a Ghostty shortcut, update the matching line in `tui-zening/config/ghostty` at the same time.
 - Prefix-free inner bindings belong to tmux root-table bindings; prefix-based inner bindings belong to the `prefix + Ctrl+...` family.
 - Document the tmux binding first, then the Ghostty shortcut as a convenience alias.
