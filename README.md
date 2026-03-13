@@ -126,7 +126,7 @@ Ghostty adds a helper layer on top of tmux:
 | Outer zoom pane | `Alt+z` | `prefix + z` |
 | Outer new window | `Alt+c` | `prefix + c` |
 | Outer close pane | `Alt+x` | `prefix + x` |
-| Outer swap pane down / up | `Alt+.` / `Alt+;` | `prefix + .` / `prefix + ,` |
+| Outer swap pane down / up | `Alt+.` / `Alt+,` | `prefix + .` / `prefix + ,` |
 | Outer swap window left / right | `Alt+p` / `Alt+n` | `prefix + p` / `prefix + n` |
 | Outer resize coarse | `Alt+←/↓/↑/→` | `prefix + ←/↓/↑/→` |
 | Outer reload config | `Alt+r` | `prefix + r` |
@@ -141,7 +141,7 @@ Ghostty adds a helper layer on top of tmux:
 | Inner split vertical | `Ctrl+Alt+-` | `prefix + Ctrl+-` |
 | Inner bottom pane 25% | `Ctrl+Alt+=` | `prefix + Ctrl+=` |
 | Inner right pane 33% | `Ctrl+Alt+/` | `prefix + Ctrl+/` |
-| Inner swap pane down / up | `Ctrl+Alt+.` / `Ctrl+Alt+;` | `prefix + Ctrl+.` / `prefix + Ctrl+,` |
+| Inner swap pane down / up | `Ctrl+Alt+.` / `Ctrl+Alt+,` | `prefix + Ctrl+.` / `prefix + Ctrl+,` |
 | Inner copy mode | `Ctrl+Alt+[` | `prefix + Ctrl+[` |
 | Inner swap window left / right | `Ctrl+Alt+p` / `Ctrl+Alt+n` | `prefix + Ctrl+p` / `prefix + Ctrl+n` |
 | Inner resize coarse | `Ctrl+Alt+←/↓/↑/→` | `prefix + Ctrl+←/↓/↑/→` |
