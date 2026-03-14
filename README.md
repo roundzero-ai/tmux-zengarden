@@ -7,6 +7,7 @@ A clean, modern tmux setup for coding across MacBook Pro, Mac Studio, DGX Spark,
 - **256-color + true color** — optimized for Ghostty terminal
 - **Two-line status bar**: session · CPU · RAM · GPU · clock
 - **Native window tabs** with per-window color cycling and instant updates on switch
+- **Mouse-aware window tabs**: outer tabs stay clickable; inner mouse events still pass through in nested setups
 - **Vim pane navigation**: `Alt+h/j/k/l` (no prefix) or `prefix + h/j/k/l`
 - **Smart pane splits**: bottom-quarter and right-third toggles (create or focus)
 - **Nested tmux support**: F12 toggles key passthrough with visual REMOTE mode dimming
@@ -17,13 +18,13 @@ A clean, modern tmux setup for coding across MacBook Pro, Mac Studio, DGX Spark,
 
 ```bash
 # On any machine (local or via SSH):
-bash ~/Projects/tmux_zengarden/deploy.sh
+bash ~/Projects/tmux-zengarden/deploy.sh
 
 # Deploy and reload a live tmux session:
-bash ~/Projects/tmux_zengarden/deploy.sh --reload
+bash ~/Projects/tmux-zengarden/deploy.sh --reload
 
 # Also deploy oh-my-posh theme:
-bash ~/Projects/tmux_zengarden/deploy.sh --posh
+bash ~/Projects/tmux-zengarden/deploy.sh --posh
 ```
 
 ## Key Bindings
@@ -174,7 +175,7 @@ Tabs use **native `#{W:...}` tmux format** for instant updates on switch — no 
 
 - **Active tab**: Nerd Font rounded pill with colored background
 - **Inactive tab**: dim colored text, no pill
-- **Color cycling**: 9-color palette indexed by window number (1=sky, 2=purple, 3=green, 4=amber, 5=coral, 6=cyan, 7=gold, 8=pink, 9=orange)
+- **Click targets**: tabs are wrapped with explicit tmux mouse ranges for reliable click-to-switch behavior
 - **Flags**: `Z` for zoomed, `!` for activity
 
 ### REMOTE Mode (F12) Tab Dimming
@@ -236,9 +237,9 @@ All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy
 ## Remote Deploy via SSH
 
 ```bash
-rsync -av ~/Projects/tmux_zengarden/ mac-studio:~/Projects/tmux_zengarden/
-ssh mac-studio "bash ~/Projects/tmux_zengarden/deploy.sh"
+rsync -av ~/Projects/tmux-zengarden/ mac-studio:~/Projects/tmux-zengarden/
+ssh mac-studio "bash ~/Projects/tmux-zengarden/deploy.sh"
 
-rsync -av ~/Projects/tmux_zengarden/ dgx-spark:~/Projects/tmux_zengarden/
-ssh dgx-spark "bash ~/Projects/tmux_zengarden/deploy.sh"
+rsync -av ~/Projects/tmux-zengarden/ dgx-spark:~/Projects/tmux-zengarden/
+ssh dgx-spark "bash ~/Projects/tmux-zengarden/deploy.sh"
 ```
