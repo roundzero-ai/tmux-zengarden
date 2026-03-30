@@ -3,28 +3,80 @@
 set -u
 
 CACHE_DIR="${TMPDIR:-/tmp}/tmux-zengarden-${UID:-$(id -u)}"
-CACHE_FILE="$CACHE_DIR/status-stats.cache"
+CACHE_FILE="$CACHE_DIR/status-stats-v2.cache"
 TTL=4
 
 mkdir -p "$CACHE_DIR"
 
 now=$(date +%s)
 if [[ -r "$CACHE_FILE" ]]; then
-    read -r cached_at cached_line < "$CACHE_FILE" || true
+    IFS= read -r cached_line < "$CACHE_FILE" || true
+    cached_at=${cached_line%% *}
+    cached_payload=${cached_line#* }
     if [[ -n "${cached_at:-}" && "$cached_at" =~ ^[0-9]+$ ]] && (( now - cached_at < TTL )); then
-        printf '%s' "${cached_line:-}"
+        printf '%s' "$cached_payload"
         exit 0
     fi
 fi
 
-cpu=0
-mem_used_tenths=0
-mem_pct=0
-gpu_label="#[fg=colour244]GPU  ---#[default]"
 os=$(uname)
+arch=$(uname -m)
+
+cpu_pct=0
+mem_used_mb=0
+mem_total_mb=0
+gpu_pct=""
+gpu_used_mb=""
+gpu_total_mb=""
+uma_mode=0
+
+metric_color() {
+    local pct=${1:-0}
+    if ! [[ "$pct" =~ ^[0-9]+$ ]]; then
+        printf 'colour244'
+    elif (( pct >= 80 )); then
+        printf 'colour196'
+    elif (( pct >= 50 )); then
+        printf 'colour214'
+    else
+        printf 'colour82'
+    fi
+}
+
+format_size_mb() {
+    local mb=${1:-0}
+    if ! [[ "$mb" =~ ^[0-9]+$ ]]; then
+        printf '0M'
+    elif (( mb >= 10240 )); then
+        printf '%dG' $(( (mb + 512) / 1024 ))
+    elif (( mb >= 1024 )); then
+        printf '%d.%dG' $(( mb / 1024 )) $(( ((mb % 1024) * 10 + 512) / 1024 ))
+    else
+        printf '%dM' "$mb"
+    fi
+}
+
+format_metric() {
+    local label=$1
+    local used_mb=$2
+    local total_mb=$3
+    local pct=$4
+    local color
+    color=$(metric_color "$pct")
+    printf '#[fg=%s]%s %s/%s %d%%#[default]' \
+        "$color" "$label" "$(format_size_mb "$used_mb")" "$(format_size_mb "$total_mb")" "$pct"
+}
+
+format_pct_metric() {
+    local label=$1
+    local pct=$2
+    local color
+    color=$(metric_color "$pct")
+    printf '#[fg=%s]%s %3d%%#[default]' "$color" "$label" "$pct"
+}
 
 if [[ "$os" == "Darwin" ]]; then
-    cpu=$(top -l 1 -s 0 | awk '/CPU usage/ {gsub(/%/, "", $3); gsub(/%/, "", $5); print int($3 + $5); exit}')
+    cpu_pct=$(top -l 1 -s 0 | awk '/CPU usage/ {gsub(/%/, "", $3); gsub(/%/, "", $5); print int($3 + $5); exit}')
 
     total_bytes=$(sysctl -n hw.memsize 2>/dev/null)
     if [[ -z "$total_bytes" || ! "$total_bytes" =~ ^[0-9]+$ || "$total_bytes" -le 0 ]]; then
@@ -42,67 +94,106 @@ if [[ "$os" == "Darwin" ]]; then
     free_bytes=$(( (free_pages + spec_pages + inac_pages) * page_size ))
     used_bytes=$(( total_bytes - free_bytes ))
     (( used_bytes < 0 )) && used_bytes=0
-    mem_used_tenths=$(( used_bytes * 10 / 1073741824 ))
-    mem_pct=$(( used_bytes * 100 / total_bytes ))
+    mem_used_mb=$(( used_bytes / 1048576 ))
+    mem_total_mb=$(( total_bytes / 1048576 ))
 
-    util=$(ioreg -r -d 1 -c IOAccelerator 2>/dev/null | awk -F'=|"' '/Device Utilization %/ {gsub(/[^0-9]/, "", $3); print $3; exit}')
-    if [[ -n "$util" && "$util" =~ ^[0-9]+$ ]]; then
-        if   (( util >= 80 )); then gpu_color="colour196"
-        elif (( util >= 50 )); then gpu_color="colour214"
-        else                       gpu_color="colour141"
-        fi
-        gpu_label=$(printf '#[fg=%s]GPU %3d%%#[default]' "$gpu_color" "$util")
-    else
-        gpu_label='#[fg=colour244]GPU  N/A#[default]'
-    fi
+    gpu_pct=$(ioreg -r -d 1 -c IOAccelerator 2>/dev/null | awk -F'Device Utilization %"=' '/Device Utilization %/ {
+        split($2, a, /[^0-9]/)
+        print a[1]
+        exit
+    }')
+    [[ "$arch" == "arm64" ]] && uma_mode=1
+elif command -v tegrastats >/dev/null 2>&1; then
+    tegra_line=$(tegrastats --interval 1000 --count 1 2>/dev/null | awk 'NR==1 {print; exit}')
+    cpu_pct=$(awk '
+        {
+            total=0; count=0
+            while (match($0, /CPU \[[^]]+\]/)) {
+                block=substr($0, RSTART, RLENGTH)
+                gsub(/CPU \[/, "", block)
+                gsub(/\]/, "", block)
+                n=split(block, parts, /,/) 
+                for (i=1; i<=n; i++) {
+                    if (parts[i] ~ /%@/) {
+                        gsub(/%@.*/, "", parts[i])
+                        total += parts[i] + 0
+                        count++
+                    }
+                }
+                $0=substr($0, RSTART + RLENGTH)
+            }
+            if (count > 0) printf "%d", total / count
+            else print 0
+        }
+    ' <<< "$tegra_line")
+    read -r mem_used_mb mem_total_mb <<< "$(awk '
+        match($0, /RAM ([0-9]+)\/([0-9]+)MB/, a) {print a[1], a[2]; found=1}
+        END {if (!found) print 0, 0}
+    ' <<< "$tegra_line")"
+    gpu_pct=$(awk '
+        match($0, /GR3D_FREQ ([0-9]+)%/, a) {print a[1]; found=1}
+        END {if (!found) print ""}
+    ' <<< "$tegra_line")
+    uma_mode=1
 else
-    cpu=$(top -bn1 | awk '/^%Cpu/ {printf "%.0f", 100 - $8; exit}')
-
-    read -r used total <<< "$(free -m | awk '/^Mem/ {printf "%d %d", $3, $2; exit}')"
-    if [[ -n "${used:-}" && -n "${total:-}" && "$total" -gt 0 ]]; then
-        mem_pct=$(( used * 100 / total ))
-        mem_used_tenths=$(( used * 10 / 1024 ))
-    fi
+    cpu_pct=$(top -bn1 | awk '/^%Cpu/ {printf "%.0f", 100 - $8; exit}')
+    read -r mem_used_mb mem_total_mb <<< "$(free -m | awk '/^Mem/ {printf "%d %d", $3, $2; exit}')"
 
     if command -v nvidia-smi >/dev/null 2>&1; then
-        IFS=',' read -r util mem_used <<< "$(nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader,nounits 2>/dev/null | awk 'NR==1 {gsub(/ /, "", $1); gsub(/ /, "", $2); print $1 "," $2}')"
-        if [[ -n "$util" && "$util" =~ ^[0-9]+$ ]]; then
-            if   (( util >= 80 )); then gpu_color="colour196"
-            elif (( util >= 50 )); then gpu_color="colour214"
-            else                       gpu_color="colour141"
-            fi
-
-            if [[ -n "$mem_used" && "$mem_used" =~ ^[0-9]+$ ]]; then
-                mem_gb=$(( mem_used / 1024 ))
-                gpu_label=$(printf '#[fg=%s]GPU %3d%% %dG#[default]' "$gpu_color" "$util" "$mem_gb")
-            else
-                gpu_label=$(printf '#[fg=%s]GPU %3d%% UMA#[default]' "$gpu_color" "$util")
-            fi
-        else
-            gpu_label='#[fg=colour244]GPU  N/A#[default]'
+        IFS=',' read -r gpu_pct gpu_used_mb gpu_total_mb <<< "$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | awk 'NR==1 {
+            gsub(/ /, "", $1)
+            gsub(/ /, "", $2)
+            gsub(/ /, "", $3)
+            print $1 "," $2 "," $3
+        }')"
+        if [[ ! "$gpu_used_mb" =~ ^[0-9]+$ || ! "$gpu_total_mb" =~ ^[0-9]+$ ]]; then
+            uma_mode=1
+            gpu_used_mb=""
+            gpu_total_mb=""
         fi
     fi
 fi
 
-if [[ -z "$cpu" || ! "$cpu" =~ ^[0-9]+$ ]]; then
-    cpu=0
+if [[ -z "$cpu_pct" || ! "$cpu_pct" =~ ^[0-9]+$ ]]; then
+    cpu_pct=0
+fi
+if [[ -z "$mem_used_mb" || ! "$mem_used_mb" =~ ^[0-9]+$ ]]; then
+    mem_used_mb=0
+fi
+if [[ -z "$mem_total_mb" || ! "$mem_total_mb" =~ ^[0-9]+$ || "$mem_total_mb" -le 0 ]]; then
+    mem_total_mb=1
+fi
+mem_pct=$(( mem_used_mb * 100 / mem_total_mb ))
+
+parts=()
+parts+=("$(format_pct_metric CPU "$cpu_pct")")
+
+if (( uma_mode )); then
+    parts+=("$(format_metric UMA "$mem_used_mb" "$mem_total_mb" "$mem_pct")")
+else
+    parts+=("$(format_metric RAM "$mem_used_mb" "$mem_total_mb" "$mem_pct")")
 fi
 
-if   (( cpu >= 80 )); then cpu_color='colour196'
-elif (( cpu >= 50 )); then cpu_color='colour214'
-else                       cpu_color='colour82'
+if [[ -n "$gpu_pct" && "$gpu_pct" =~ ^[0-9]+$ ]]; then
+    parts+=("$(format_pct_metric GPU "$gpu_pct")")
+else
+    parts+=("#[fg=colour244]GPU  N/A#[default]")
 fi
 
-if   (( mem_pct >= 85 )); then mem_color='colour196'
-elif (( mem_pct >= 60 )); then mem_color='colour214'
-else                          mem_color='colour82'
+if (( ! uma_mode )); then
+    if [[ -n "$gpu_used_mb" && "$gpu_used_mb" =~ ^[0-9]+$ && -n "$gpu_total_mb" && "$gpu_total_mb" =~ ^[0-9]+$ && "$gpu_total_mb" -gt 0 ]]; then
+        gpu_mem_pct=$(( gpu_used_mb * 100 / gpu_total_mb ))
+        parts+=("$(format_metric VRAM "$gpu_used_mb" "$gpu_total_mb" "$gpu_mem_pct")")
+    else
+        parts+=("#[fg=colour244]VRAM N/A#[default]")
+    fi
 fi
 
-mem_whole=$(( mem_used_tenths / 10 ))
-mem_frac=$(( mem_used_tenths % 10 ))
-
-line=$(printf '#[fg=%s]CPU %3d%%#[default] #[fg=colour238]│ #[fg=%s]MEM %d.%dG %d%%#[default] #[fg=colour238]│ %s' \
-    "$cpu_color" "$cpu" "$mem_color" "$mem_whole" "$mem_frac" "$mem_pct" "$gpu_label")
+line=''
+for i in "${!parts[@]}"; do
+    (( i > 0 )) && line+=" #[fg=colour238]│ "
+    line+="${parts[$i]}"
+done
 
 printf '%s %s\n' "$now" "$line" > "$CACHE_FILE"
 printf '%s' "$line"

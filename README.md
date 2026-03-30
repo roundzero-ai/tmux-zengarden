@@ -161,11 +161,11 @@ Maintenance rules for future updates:
 
 ```
  ≋ ZenGarden  user@host          1:project  2:folder>nvim  3:user@remote
-  session                        CPU 18%  MEM 8.2G 51%  GPU 20%  14:35 Fri
+  session                        CPU 18% | UMA 8.2G/16G 51% | GPU 20%      14:35 Fri
 ```
 
 - **Line 0** — Brand pill + identity (left) · Colored window tabs (right)
-- **Line 1** — Session pill + PREFIX indicator (left) · cached CPU · RAM · GPU · time (right)
+- **Line 1** — Session pill + PREFIX indicator (left) · cached CPU · RAM/UMA · GPU · VRAM · time (right)
 - **Window tab labels**: idle shell → `folder` · program running → `folder>program` · SSH → `user@host`
 - GPU stats: `ioreg` on Apple Silicon (no sudo) · `nvidia-smi` on DGX Spark (UMA-aware for GB10)
 
@@ -188,10 +188,14 @@ When F12 activates REMOTE mode, all outer window tabs dim to grey and the brand 
 | Active tab | Per-window colored pill | Muted grey pill |
 | Inactive tabs | Dim per-window colored text | Dim grey text |
 
+**Status layout:**
+- **UMA machines** (M-series Macs, Jetson/Orin, GB10 UMA): `CPU` · `UMA` · `GPU`
+- **Discrete GPU machines** (e.g. RTX 4080): `CPU` · `RAM` · `GPU` · `VRAM`
+
 **Status colors (line 1 stats):**
 - Green → normal
-- Orange → moderate (CPU≥50%, MEM≥60%, GPU≥50%)
-- Red → high (CPU≥80%, MEM≥85%, GPU≥80%)
+- Orange → moderate (>=50%)
+- Red → high (>=80%)
 
 ## Pane Borders
 
@@ -224,14 +228,18 @@ All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy
 | Script | Called from | Purpose |
 |---|---|---|
 | `ssh_label.sh` | `automatic-rename-format` | Extracts SSH target (`user@host`) from child processes via `ps` |
-| `status_stats.sh` | `status-format[1]` | Combined CPU + memory + GPU sampler with a short cache to avoid repeated redraw work |
+| `status_stats.sh` | `status-format[1]` | Combined CPU + RAM/UMA + GPU + VRAM sampler with a short cache to avoid repeated redraw work |
 | `pane_git.sh` | `pane-border-format` | Active pane context: `dir`, active Python env (`venv`/Conda), and cached `git: branch`; inactive panes show `dir` only |
 
 ## GPU Stats
 
-**macOS**: Uses `ioreg IOAccelerator` — no `sudo` required, works on Apple Silicon and Intel.
+**macOS (Apple Silicon)**: Uses `ioreg IOAccelerator` for GPU utilization, and shows unified memory as `UMA used/total %`.
 
-**Linux / DGX Spark**: Uses `nvidia-smi`. On GB10 Grace Blackwell (unified memory), GPU utilization is shown with `UMA` label since dedicated VRAM is not applicable.
+**Linux / DGX Spark GB10**: Uses `nvidia-smi` for GPU utilization. If dedicated GPU memory is unavailable, the status bar switches to `UMA used/total %`.
+
+**Jetson / Orin Nano**: Uses `tegrastats` for CPU, RAM, and `GR3D_FREQ`, and shows shared memory as `UMA used/total %`.
+
+**Discrete NVIDIA Linux GPUs**: Uses one `nvidia-smi` query to show both `GPU %` and `VRAM used/total %`.
 
 ## Remote Deploy via SSH
 
