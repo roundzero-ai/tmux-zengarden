@@ -105,36 +105,23 @@ if [[ "$os" == "Darwin" ]]; then
     }')
     [[ "$arch" == "arm64" ]] && uma_mode=1
 elif command -v tegrastats >/dev/null 2>&1; then
-    tegra_line=$(tegrastats --interval 1000 --count 1 2>/dev/null | awk 'NR==1 {print; exit}')
-    cpu_pct=$(awk '
+    tegra_line=$(timeout 2 tegrastats --interval 1000 2>/dev/null | awk 'NR==1 {print; exit}')
+    cpu_pct=$(echo "$tegra_line" | sed -E 's/.*CPU \[([0-9%@,]+)\].*/\1/' | awk -F',' '
         {
             total=0; count=0
-            while (match($0, /CPU \[[^]]+\]/)) {
-                block=substr($0, RSTART, RLENGTH)
-                gsub(/CPU \[/, "", block)
-                gsub(/\]/, "", block)
-                n=split(block, parts, /,/) 
-                for (i=1; i<=n; i++) {
-                    if (parts[i] ~ /%@/) {
-                        gsub(/%@.*/, "", parts[i])
-                        total += parts[i] + 0
-                        count++
-                    }
+            for (i=1; i<=NF; i++) {
+                if ($i ~ /%@/) {
+                    gsub(/%@.*/, "", $i)
+                    total += $i + 0
+                    count++
                 }
-                $0=substr($0, RSTART + RLENGTH)
             }
             if (count > 0) printf "%d", total / count
             else print 0
-        }
-    ' <<< "$tegra_line")
-    read -r mem_used_mb mem_total_mb <<< "$(awk '
-        match($0, /RAM ([0-9]+)\/([0-9]+)MB/, a) {print a[1], a[2]; found=1}
-        END {if (!found) print 0, 0}
-    ' <<< "$tegra_line")"
-    gpu_pct=$(awk '
-        match($0, /GR3D_FREQ ([0-9]+)%/, a) {print a[1]; found=1}
-        END {if (!found) print ""}
-    ' <<< "$tegra_line")
+        }')
+    mem_used_mb=$(echo "$tegra_line" | sed -E 's/.*RAM ([0-9]+)\/([0-9]+)MB.*/\1/')
+    mem_total_mb=$(echo "$tegra_line" | sed -E 's/.*RAM ([0-9]+)\/([0-9]+)MB.*/\2/')
+    gpu_pct=$(echo "$tegra_line" | sed -E 's/.*GR3D_FREQ ([0-9]+)%.*/\1/')
     uma_mode=1
 else
     cpu_pct=$(top -bn1 | awk '/^%Cpu/ {printf "%.0f", 100 - $8; exit}')
