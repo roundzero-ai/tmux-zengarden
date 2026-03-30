@@ -3,7 +3,7 @@
 set -u
 
 CACHE_DIR="${TMPDIR:-/tmp}/tmux-zengarden-${UID:-$(id -u)}"
-CACHE_FILE="$CACHE_DIR/status-stats-v2.cache"
+CACHE_FILE="$CACHE_DIR/status-stats-v3.cache"
 TTL=4
 
 mkdir -p "$CACHE_DIR"
@@ -28,6 +28,7 @@ mem_total_mb=0
 gpu_pct=""
 gpu_used_mb=""
 gpu_total_mb=""
+gpu_name=""
 uma_mode=0
 
 metric_color() {
@@ -140,14 +141,20 @@ else
     read -r mem_used_mb mem_total_mb <<< "$(free -m | awk '/^Mem/ {printf "%d %d", $3, $2; exit}')"
 
     if command -v nvidia-smi >/dev/null 2>&1; then
-        IFS=',' read -r gpu_pct gpu_used_mb gpu_total_mb <<< "$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | awk 'NR==1 {
-            gsub(/ /, "", $1)
-            gsub(/ /, "", $2)
-            gsub(/ /, "", $3)
+        gpu_name=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | awk 'NR==1 {sub(/^[[:space:]]+/, ""); sub(/[[:space:]]+$/, ""); print; exit}')
+        IFS=',' read -r gpu_pct gpu_used_mb gpu_total_mb <<< "$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | awk -F',' 'NR==1 {
+            for (i=1; i<=3; i++) {
+                gsub(/^[[:space:]]+/, "", $i)
+                gsub(/[[:space:]]+$/, "", $i)
+            }
             print $1 "," $2 "," $3
+            exit
         }')"
-        if [[ ! "$gpu_used_mb" =~ ^[0-9]+$ || ! "$gpu_total_mb" =~ ^[0-9]+$ ]]; then
+        if [[ "$gpu_name" =~ (GB10|DGX[[:space:]]+Spark) ]]; then
             uma_mode=1
+            gpu_used_mb=""
+            gpu_total_mb=""
+        elif [[ ! "$gpu_used_mb" =~ ^[0-9]+$ || ! "$gpu_total_mb" =~ ^[0-9]+$ ]]; then
             gpu_used_mb=""
             gpu_total_mb=""
         fi

@@ -5,14 +5,14 @@ A clean, modern tmux setup for coding across MacBook Pro, Mac Studio, DGX Spark,
 ## Features
 
 - **256-color + true color** — optimized for Ghostty terminal
-- **Two-line status bar**: session · CPU · RAM · GPU · clock
+- **Two-line status bar**: session · CPU · RAM/UMA · GPU · VRAM · clock
 - **Native window tabs** with per-window color cycling and instant updates on switch
 - **Mouse-aware window tabs**: outer tabs stay clickable; inner mouse events still pass through in nested setups
 - **Vim pane navigation**: `Alt+h/j/k/l` (no prefix) or `prefix + h/j/k/l`
 - **Smart pane splits**: bottom-quarter and right-third toggles (create or focus)
 - **Nested tmux support**: F12 toggles key passthrough with visual REMOTE mode dimming
 - **Ctrl-key layer**: operate inner tmux without toggling REMOTE mode
-- **Cross-platform**: macOS (Apple Silicon/Intel) & Linux (NVIDIA GPU via `nvidia-smi`)
+- **Cross-platform**: Apple Silicon, Jetson/Orin, GB10 UMA, and Linux PCs with discrete NVIDIA GPUs
 
 ## Quick Deploy
 
@@ -162,12 +162,13 @@ Maintenance rules for future updates:
 ```
  ≋ ZenGarden  user@host          1:project  2:folder>nvim  3:user@remote
   session                        CPU 18% | UMA 8.2G/16G 51% | GPU 20%      14:35 Fri
+  session                        CPU 22% | RAM 12G/64G 19% | GPU 31% | VRAM 4.8G/16G 30%      14:35 Fri
 ```
 
 - **Line 0** — Brand pill + identity (left) · Colored window tabs (right)
 - **Line 1** — Session pill + PREFIX indicator (left) · cached CPU · RAM/UMA · GPU · VRAM · time (right)
 - **Window tab labels**: idle shell → `folder` · program running → `folder>program` · SSH → `user@host`
-- GPU stats: `ioreg` on Apple Silicon (no sudo) · `nvidia-smi` on DGX Spark (UMA-aware for GB10)
+- GPU stats: `top` + `vm_stat` + `ioreg` on Apple Silicon · `tegrastats` on Jetson/Orin · `top` + `free` + `nvidia-smi` on NVIDIA Linux
 
 ### Window Tab Styling
 
@@ -191,6 +192,12 @@ When F12 activates REMOTE mode, all outer window tabs dim to grey and the brand 
 **Status layout:**
 - **UMA machines** (M-series Macs, Jetson/Orin, GB10 UMA): `CPU` · `UMA` · `GPU`
 - **Discrete GPU machines** (e.g. RTX 4080): `CPU` · `RAM` · `GPU` · `VRAM`
+
+**Detection model:**
+- Apple Silicon (`arm64` macOS): `CPU` · `UMA` · `GPU`
+- Jetson / Orin (`tegrastats`): `CPU` · `UMA` · `GPU`
+- DGX Spark GB10 UMA (`nvidia-smi` GPU name match): `CPU` · `UMA` · `GPU`
+- Linux PC with discrete NVIDIA GPU: `CPU` · `RAM` · `GPU` · `VRAM`
 
 **Status colors (line 1 stats):**
 - Green → normal
@@ -233,13 +240,13 @@ All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy
 
 ## GPU Stats
 
-**macOS (Apple Silicon)**: Uses `ioreg IOAccelerator` for GPU utilization, and shows unified memory as `UMA used/total %`.
+**macOS (Apple Silicon)**: Uses `top` for CPU, `vm_stat` for memory, and `ioreg IOAccelerator` for GPU utilization; shows unified memory as `UMA used/total %`.
 
-**Linux / DGX Spark GB10**: Uses `nvidia-smi` for GPU utilization. If dedicated GPU memory is unavailable, the status bar switches to `UMA used/total %`.
+**Linux / DGX Spark GB10**: Uses `top`, `free`, and `nvidia-smi`. GB10 UMA hosts are detected by GPU name and rendered as `UMA used/total %`.
 
 **Jetson / Orin Nano**: Uses `tegrastats` for CPU, RAM, and `GR3D_FREQ`, and shows shared memory as `UMA used/total %`.
 
-**Discrete NVIDIA Linux GPUs**: Uses one `nvidia-smi` query to show both `GPU %` and `VRAM used/total %`.
+**Discrete NVIDIA Linux GPUs**: Uses `top`, `free`, and one `nvidia-smi` query to show `GPU %` and `VRAM used/total %`. Invalid VRAM reads no longer force the host into `UMA` mode.
 
 ## Remote Deploy via SSH
 
