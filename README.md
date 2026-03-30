@@ -165,7 +165,7 @@ Maintenance rules for future updates:
 ```
 
 - **Line 0** — Brand pill + identity (left) · Colored window tabs (right)
-- **Line 1** — Session pill + PREFIX indicator (left) · CPU · RAM · GPU · time (right)
+- **Line 1** — Session pill + PREFIX indicator (left) · cached CPU · RAM · GPU · time (right)
 - **Window tab labels**: idle shell → `folder` · program running → `folder>program` · SSH → `user@host`
 - GPU stats: `ioreg` on Apple Silicon (no sudo) · `nvidia-smi` on DGX Spark (UMA-aware for GB10)
 
@@ -195,9 +195,10 @@ When F12 activates REMOTE mode, all outer window tabs dim to grey and the brand 
 
 ## Pane Borders
 
-Persistent header at top of each pane shows `user@host` and git branch:
+Persistent header at top of each pane shows `user@host` and pane context:
 - **Active pane**: bold green username, sky blue border
-- **Inactive pane**: dim grey username
+- **Active pane details**: `dir`, Python env, and git branch / dirty marker
+- **Inactive pane**: dim grey username with `dir` only for lower redraw cost
 
 ## Nested tmux Clipboard
 
@@ -218,15 +219,13 @@ App sends DCS-wrapped OSC 52
 
 ## Scripts
 
-All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy.sh`.
+All scripts live in `scripts/` and are deployed to `~/.tmux/scripts/` by `deploy.sh`. Re-deploy syncs the directory to the current script set, so retired helpers are removed too.
 
 | Script | Called from | Purpose |
 |---|---|---|
 | `ssh_label.sh` | `automatic-rename-format` | Extracts SSH target (`user@host`) from child processes via `ps` |
-| `cpu.sh` | `status-format[1]` | CPU usage percentage (macOS: `top`, Linux: `top -bn1`) |
-| `memory.sh` | `status-format[1]` | Memory usage (macOS: `vm_stat`, Linux: `free`) |
-| `gpu.sh` | `status-format[1]` | GPU utilization (macOS: `ioreg`, Linux: `nvidia-smi`) |
-| `pane_git.sh` | `pane-border-format` | Pane context: `dir`, active Python env (`venv`/Conda), and `git: branch` |
+| `status_stats.sh` | `status-format[1]` | Combined CPU + memory + GPU sampler with a short cache to avoid repeated redraw work |
+| `pane_git.sh` | `pane-border-format` | Active pane context: `dir`, active Python env (`venv`/Conda), and cached `git: branch`; inactive panes show `dir` only |
 
 ## GPU Stats
 
