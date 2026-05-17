@@ -90,7 +90,7 @@ if [[ "${1:-}" == "--reload" ]] || [[ "${1:-}" == "-r" ]]; then
 fi
 
 echo ""
-echo "Done. Start tmux with: tmux new -s \"Main | \$(hostname -s)\""
+echo "Done. Start tmux with: tmux new -s \"\$(hostname -s)\""
 echo ""
 echo "Key bindings cheatsheet:"
 echo "  Prefix              : Ctrl-Space"
