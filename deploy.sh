@@ -2,11 +2,12 @@
 # ============================================================
 #  tmux ZenGarden — deploy script
 #  Run on any machine (Mac Studio, DGX Spark, MacBook Pro...)
-#  Usage: bash deploy.sh [--reload] [--posh]
+#  Usage: bash deploy.sh [--reload]
 #
 #  --reload   reload live tmux session after deploy
-#  --posh     also deploy oh-my-posh theme (oh-my-posh.json)
-#             installs to ~/.config/oh-my-posh/zengarden.json
+#
+#  The oh-my-posh theme moved to tui-zening (config/oh-my-posh.json);
+#  --posh is accepted but only prints a pointer there.
 # ============================================================
 
 set -euo pipefail
@@ -14,6 +15,18 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DST="$HOME/.tmux/scripts"
 CONF_DST="$HOME/.tmux.conf"
+
+RELOAD=false
+for arg in "$@"; do
+    case "$arg" in
+        --reload|-r) RELOAD=true ;;
+        --posh)
+            echo "[!] --posh is deprecated: the oh-my-posh theme now lives in"
+            echo "    tui-zening (config/oh-my-posh.json) and is deployed by its setup.sh."
+            ;;
+        *) echo "[!] Unknown option: $arg (supported: --reload)" ;;
+    esac
+done
 
 echo "==> Deploying tmux ZenGarden from $SCRIPT_DIR"
 
@@ -56,32 +69,8 @@ else
     fi
 fi
 
-# ── 5. Deploy oh-my-posh theme (optional) ────────────────────
-for arg in "$@"; do
-    if [[ "$arg" == "--posh" ]]; then
-        POSH_DST="$HOME/.config/oh-my-posh/zengarden.json"
-        mkdir -p "$(dirname "$POSH_DST")"
-        cp "$SCRIPT_DIR/oh-my-posh.json" "$POSH_DST"
-        echo "    oh-my-posh -> $POSH_DST"
-
-        if command -v oh-my-posh &>/dev/null; then
-            echo ""
-            echo "    To activate, add to ~/.zshrc or ~/.bashrc:"
-            echo "      eval \"\$(oh-my-posh init zsh --config $POSH_DST)\""
-        else
-            echo "    [!] oh-my-posh not found."
-            if [[ "$(uname)" == "Darwin" ]]; then
-                echo "        Install: brew install jandedobbeleer/oh-my-posh/oh-my-posh"
-            else
-                echo "        Install: curl -s https://ohmyposh.dev/install.sh | bash -s"
-            fi
-        fi
-        break
-    fi
-done
-
-# ── 6. Reload live tmux server if running ────────────────────
-if [[ "${1:-}" == "--reload" ]] || [[ "${1:-}" == "-r" ]]; then
+# ── 5. Reload live tmux server if running ────────────────────
+if [[ "$RELOAD" == true ]]; then
     if tmux list-sessions &>/dev/null 2>&1; then
         tmux source-file "$CONF_DST" && echo "" && echo "    Reloaded live tmux session."
     else

@@ -22,10 +22,10 @@ bash ~/Projects/tmux-zengarden/deploy.sh
 
 # Deploy and reload a live tmux session:
 bash ~/Projects/tmux-zengarden/deploy.sh --reload
-
-# Also deploy oh-my-posh theme:
-bash ~/Projects/tmux-zengarden/deploy.sh --posh
 ```
+
+For full environment setup (Ghostty, oh-my-posh theme, fonts, this config) use
+**[roundzero-ai/tui-zening](https://github.com/roundzero-ai/tui-zening)** — its `setup.sh` consumes this repo.
 
 ## Key Bindings
 
@@ -112,6 +112,10 @@ How it works:
 
 ### Ghostty single-keystroke shortcuts (optional)
 
+Defined in **`ghostty-keys.conf`** in this repo (the source of truth for this layer).
+tui-zening's `setup.sh` deploys it next to the Ghostty config as `zengarden-keys.conf`,
+included via `config-file = ?zengarden-keys.conf`.
+
 Ghostty adds a helper layer on top of tmux:
 
 - `Alt+...` skips the prefix for the full **outer** prefix-based binding set
@@ -153,7 +157,7 @@ Maintenance rules for future updates:
 - Keep the mapping pattern aligned across layers: outer tmux, inner tmux, then Ghostty shortcut if one exists.
 - If an outer binding changes and it has an inner equivalent, update the inner `Ctrl+...` form to match the same semantic action.
 - Keep the full outer Ghostty alias set aligned with prefix-based outer actions: resize, split, toggle pane layouts, zoom, new/close, swaps, reload, and copy mode.
-- If an inner action has a Ghostty shortcut, update the matching line in `tui-zening/config/ghostty` at the same time.
+- If an action has a Ghostty shortcut, update the matching line in `ghostty-keys.conf` (this repo) at the same time.
 - Prefix-free inner bindings belong to tmux root-table bindings; prefix-based inner bindings belong to the `prefix + Ctrl+...` family.
 - Document the tmux binding first, then the Ghostty shortcut as a convenience alias.
 
