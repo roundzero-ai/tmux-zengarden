@@ -106,7 +106,11 @@ if [[ "$os" == "Darwin" ]]; then
     [[ "$arch" == "arm64" ]] && uma_mode=1
 elif command -v tegrastats >/dev/null 2>&1; then
     tegra_line=$(timeout 2 tegrastats --interval 1000 2>/dev/null | awk 'NR==1 {print; exit}')
-    cpu_pct=$(echo "$tegra_line" | sed -E 's/.*CPU \[([0-9%@,]+)\].*/\1/' | awk -F',' '
+    # Capture the whole CPU bracket ([^]]+), not just [0-9%@,]: some Jetson power models park cores
+    # and print them as `off` (e.g. CPU [8%@729,off,off]). A digit-only class can't span `off`, so the
+    # substitution fails to match and CPU is dropped. The awk below averages only the `%@` cores, so
+    # `off` is naturally ignored — same rule as the rz-inference-deploy sampler.
+    cpu_pct=$(echo "$tegra_line" | sed -E 's/.*CPU \[([^]]+)\].*/\1/' | awk -F',' '
         {
             total=0; count=0
             for (i=1; i<=NF; i++) {
